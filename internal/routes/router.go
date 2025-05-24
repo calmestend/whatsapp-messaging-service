@@ -7,6 +7,12 @@ import (
 	"github.com/calmestend/whatsapp-messaging-service/internal/handlers"
 )
 
+// @TODO: Create tests
+// @TODO: Add "links" handling
+// @TODO: Add "documents" handling
+// @TODO: Add "surveys" handling
+// @TODO: Add "media" handling
+
 // Init router
 func InitRouter() {
 	http.HandleFunc("POST /api/v1/template/pagos_atrasados", handlers.PagosAtrasados)
