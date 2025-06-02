@@ -13,7 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// @TODO: Create utils function to handle payloadData validations
+// @TODO: Refactor into small functions
 
 // Struct with parameters for template "encuesta_nps" message
 type EncuestaNpsRequest struct {
@@ -26,7 +26,6 @@ type EncuestaNpsRequest struct {
 func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 	var token string = os.Getenv("WBA_TOKEN")
 	if token == "" {
-		fmt.Println(token)
 		http.Error(w, "Missing WBA_TOKEN in environment", http.StatusInternalServerError)
 		return
 	}
@@ -94,6 +93,6 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(resp.StatusCode)
 	w.Header().Set("Content-type", "application/json")
-	fmt.Fprintln(w, "Message sent")
+	println(w, "Message sent")
 	json.NewEncoder(w).Encode(string(respBody))
 }

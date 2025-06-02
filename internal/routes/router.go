@@ -8,10 +8,6 @@ import (
 )
 
 // @TODO: Create tests
-// @TODO: Add "links" handling
-// @TODO: Add "documents" handling
-// @TODO: Add "surveys" handling
-// @TODO: Add "media" handling
 
 // Init router
 func InitRouter() {
@@ -19,4 +15,5 @@ func InitRouter() {
 	http.HandleFunc("POST /api/v1/template/encuesta_nps", handlers.EncuestaNps)
 	http.HandleFunc("POST /api/v1/template/pedido_confirmado", handlers.PedidoConfirmado)
 	http.HandleFunc("POST /api/v1/template/envio_cotizacion", handlers.EnvioCotizacion)
+	http.HandleFunc("POST /api/v1/template/envio_compra", handlers.EnvioCompra)
 }
