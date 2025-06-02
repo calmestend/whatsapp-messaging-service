@@ -20,18 +20,14 @@ import (
 // @TODO: Refactor into small functions
 
 // Struct with parameters for template "pedido_confirmado" message
-type PedidoConfirmadoRequest struct {
+type EnvioCompraRequest struct {
 	models.MessageRequest
-	CustomerName     string `json:"customerName" validate:"required"`
-	BusinessName     string `json:"businessName" validate:"required"`
-	Folio            string `json:"folio" validate:"required"`
-	NumberOfProducts string `json:"numberOfProducts" validate:"required"`
-	Amount           string `json:"amount" validate:"required"`
-	SellerName       string `json:"sellerName" validate:"required"`
+	SupplierName string `json:"supplierName" validate:"required"`
+	BusinessName string `json:"businessName" validate:"required"`
 }
 
-// Handle template "pedido_confirmado" from the Whatsapp Business API from Meta
-func PedidoConfirmado(w http.ResponseWriter, r *http.Request) {
+// Handle template "envio_compra" from the Whatsapp Business API from Meta
+func EnvioCompra(w http.ResponseWriter, r *http.Request) {
 	var token string = os.Getenv("WBA_TOKEN")
 	if token == "" {
 		http.Error(w, "Missing WBA_TOKEN in environment", http.StatusInternalServerError)
@@ -46,17 +42,13 @@ func PedidoConfirmado(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	payloadData := PedidoConfirmadoRequest{
+	payloadData := EnvioCompraRequest{
 		MessageRequest: models.MessageRequest{
 			To:   r.FormValue("to"),
 			From: r.FormValue("from"),
 		},
-		CustomerName:     r.FormValue("customerName"),
-		BusinessName:     r.FormValue("businessName"),
-		Folio:            r.FormValue("folio"),
-		Amount:           r.FormValue("amount"),
-		NumberOfProducts: r.FormValue("numberOfProducts"),
-		SellerName:       r.FormValue("sellerName"),
+		BusinessName: r.FormValue("businessName"),
+		SupplierName: r.FormValue("supplierName"),
 	}
 	validate := validator.New()
 	err = validate.Struct(payloadData)
@@ -88,7 +80,7 @@ func PedidoConfirmado(w http.ResponseWriter, r *http.Request) {
 
 	// Create part with PDF MIME
 	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition", `form-data; name="file"; filename="pedido_confirmado.pdf"`)
+	h.Set("Content-Disposition", `form-data; name="file"; filename="envio_compra.pdf"`)
 	h.Set("Content-Type", "application/pdf")
 	part, err := writer.CreatePart(h)
 	if err != nil {
@@ -130,8 +122,8 @@ func PedidoConfirmado(w http.ResponseWriter, r *http.Request) {
 	"to": "%s",
 	"type": "template",
 	"template": {
-		"name": "pedido_confirmado",
-		"language": { "code": "es" },
+		"name": "envio_compra",
+		"language": { "code": "es_MX" },
 		"components": [
 			{
 				"type": "header",
@@ -140,7 +132,7 @@ func PedidoConfirmado(w http.ResponseWriter, r *http.Request) {
 						"type": "document",
 						"document": {
 							"id": "%s",
-							"filename": "pedido_confirmado.pdf"
+							"filename": "envio_compra.pdf"
 						}
 					}
 				]
@@ -150,15 +142,11 @@ func PedidoConfirmado(w http.ResponseWriter, r *http.Request) {
 					"parameters": [
 						{ "type": "text", "text": "%s"},
 						{ "type": "text", "text": "%s"},
-						{ "type": "text", "text": "%s"},
-						{ "type": "text", "text": "%s"},
-						{ "type": "text", "text": "%s"},
-						{ "type": "text", "text": "%s"}
 					]
 				}
 			]
 		}
- }`, payloadData.To, uploadResult.ID, payloadData.CustomerName, payloadData.BusinessName, payloadData.Folio, payloadData.NumberOfProducts, payloadData.Amount, payloadData.SellerName)
+ }`, payloadData.To, uploadResult.ID, payloadData.SupplierName, payloadData.BusinessName)
 
 	msgReq, err := http.NewRequest("POST", msgURL, strings.NewReader(payloadMessage))
 	if err != nil {
