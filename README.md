@@ -11,8 +11,8 @@
     "amount": "12.34",
     "days": "3",
     "condition": "Evitar cargos por retraso",
-    "from": "463752660158443",
-    "to": "524437287686"
+    "from": "xxx",
+    "to": "xxx"
     }'
     ```
 
@@ -24,16 +24,16 @@
     -d '{
     "address": "Jaspers Market, 123 Baker Street. Palo Alto CA, 91041",
     "date": "1 de enero de 2024",
-    "from": "463752660158443",
-    "to": "524437287686"
+    "from": "xxx",
+    "to": "xxx"
     }'
     ```
 
 * POST /api/v1/template/pedido_confirmado
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/pedido_confirmado \
-    -F "to=524437287686" \
-    -F "from=463752660158443" \
+    -F "to=xxx" \
+    -F "from=xxx" \
     -F "customerName=Alex Velasco" \
     -F "businessName=Sistemas Cubicos" \
     -F "folio=2M2287" \
@@ -47,8 +47,8 @@
 * POST /api/v1/template/envio_cotizacion
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/envio_cotizacion \
-    -F "to=524437287686" \
-    -F "from=463752660158443" \
+    -F "to=xxx" \
+    -F "from=xxx" \
     -F "customerName=Alex Velasco" \
     -F "businessName=Sistemas Cubicos" \
     -F "folio=2M2287" \
@@ -60,8 +60,8 @@
 * POST /api/v1/template/envio_compra
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/envio_compra \
-    -F "to=524437287686" \
-    -F "from=463752660158443" \
+    -F "to=xxx" \
+    -F "from=xxx" \
     -F "supplierName=Muebles X" \
     -F "businessName=Muebleria Y" \
     -F "file=@hello.pdf"
