@@ -66,3 +66,15 @@
     -F "businessName=Muebleria Y" \
     -F "file=@hello.pdf"
     ```
+
+* POST /api/v1/template/cierre_diario
+    ```bash 
+    curl -X POST http://localhost:8080/api/v1/template/cierre_diario \
+      -F "to=xxx" \
+      -F "from=xxx" \
+      -F "customerName=Alejandro Velazco" \
+      -F "businessName=muebleria x" \
+      -F "date=09/06/2005" \
+      -F "hour=7:23am" \
+      -F "file=@hello.pdf"
+    ```
