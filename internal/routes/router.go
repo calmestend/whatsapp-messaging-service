@@ -16,4 +16,5 @@ func InitRouter() {
 	http.HandleFunc("POST /api/v1/template/pedido_confirmado", handlers.PedidoConfirmado)
 	http.HandleFunc("POST /api/v1/template/envio_cotizacion", handlers.EnvioCotizacion)
 	http.HandleFunc("POST /api/v1/template/envio_compra", handlers.EnvioCompra)
+	http.HandleFunc("POST /api/v1/template/cierre_diario", handlers.CierreDiario)
 }
