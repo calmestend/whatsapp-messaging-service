@@ -7,8 +7,6 @@ import (
 	"github.com/calmestend/whatsapp-messaging-service/internal/handlers"
 )
 
-// @TODO: Create tests
-
 // Init router
 func InitRouter() {
 	http.HandleFunc("POST /api/v1/template/pagos_atrasados", handlers.PagosAtrasados)

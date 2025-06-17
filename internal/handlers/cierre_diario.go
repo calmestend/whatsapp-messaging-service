@@ -17,8 +17,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// @TODO: Refactor into small functions
-
+// Struct with parameters for template "cierre_diario" message
 type CierreDiarioRequest struct {
 	models.MessageRequest
 	CustomerName string `validate:"required"`

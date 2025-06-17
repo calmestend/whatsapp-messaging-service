@@ -17,8 +17,6 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// @TODO: Create utils function to handle payloadData validations
-
 // Struct with parameters for template "envio_cotizacion" message
 type EnvioCotizacionRequest struct {
 	models.MessageRequest

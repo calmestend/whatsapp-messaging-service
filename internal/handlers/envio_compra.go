@@ -17,9 +17,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// @TODO: Refactor into small functions
-
-// Struct with parameters for template "pedido_confirmado" message
+// Struct with parameters for template "envio_compra" message
 type EnvioCompraRequest struct {
 	models.MessageRequest
 	SupplierName string `json:"supplierName" validate:"required"`
