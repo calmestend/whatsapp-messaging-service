@@ -13,14 +13,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// @TODO: Refactor into small functions
-
 // Struct with parameters for template "encuesta_nps" message
 type EncuestaNpsRequest struct {
 	models.MessageRequest
-	Address string `json:"address" validate:"required"`
-	Date    string `json:"date" validate:"required"`
-	Url     string `json:"url" validate:"required"`
+	BusinessName string `json:"businessName" validate:"required"`
+	Date         string `json:"date" validate:"required"`
+	Url          string `json:"url" validate:"required"`
 }
 
 // Handle template "encuesta_nps" from the Whatsapp Business API from Meta
@@ -77,7 +75,7 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 				}
 			]
 		}
- }`, payloadData.To, payloadData.Url, payloadData.Address, payloadData.Date)
+ }`, payloadData.To, payloadData.Url, payloadData.BusinessName, payloadData.Date)
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(payloadMessage))
 	if err != nil {
