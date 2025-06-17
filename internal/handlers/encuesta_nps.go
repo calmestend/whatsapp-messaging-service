@@ -20,6 +20,7 @@ type EncuestaNpsRequest struct {
 	models.MessageRequest
 	Address string `json:"address" validate:"required"`
 	Date    string `json:"date" validate:"required"`
+	Url     string `json:"url" validate:"required"`
 }
 
 // Handle template "encuesta_nps" from the Whatsapp Business API from Meta
@@ -57,6 +58,17 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 		"language": { "code": "es" },
 		"components": [
 				{
+					"type": "button",
+					"sub_type": "url",
+					"index": 0,
+					"parameters": [
+						{
+							"type": "text",
+							"text": "%s"
+						}	
+					]
+				},
+				{
 					"type": "body",
 					"parameters": [
 						{ "type": "text", "text": "%s"},
@@ -65,7 +77,7 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 				}
 			]
 		}
- }`, payloadData.To, payloadData.Address, payloadData.Date)
+ }`, payloadData.To, payloadData.Url, payloadData.Address, payloadData.Date)
 
 	req, err := http.NewRequest("POST", url, strings.NewReader(payloadMessage))
 	if err != nil {
@@ -93,6 +105,5 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(resp.StatusCode)
 	w.Header().Set("Content-type", "application/json")
-	println(w, "Message sent")
 	json.NewEncoder(w).Encode(string(respBody))
 }

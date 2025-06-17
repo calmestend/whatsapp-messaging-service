@@ -97,6 +97,5 @@ func PagosAtrasados(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(resp.StatusCode)
 	w.Header().Set("Content-type", "application/json")
-	println(w, "Message sent")
 	json.NewEncoder(w).Encode(string(respBody))
 }
