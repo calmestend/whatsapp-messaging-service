@@ -22,7 +22,7 @@
     curl -X POST http://localhost:8080/api/v1/template/encuesta_nps \
     -H "Content-Type: application/json" \
     -d '{
-    "address": "Muebleria Juanito",
+    "businessName": "Muebleria Juanito",
     "date": "1 de enero de 2024",
     "url": "Encuestas/xxx/xxx.aspx?Id=xxxx"
     "from": "xxx",
