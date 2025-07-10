@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -24,12 +23,6 @@ type PagosAtrasadosRequest struct {
 
 // Handle template "pagos_atrasados" from the Whatsapp Business API from Meta
 func PagosAtrasados(w http.ResponseWriter, r *http.Request) {
-	var token string = os.Getenv("WBA_TOKEN")
-	if token == "" {
-		http.Error(w, "Missing WBA_TOKEN in environment", http.StatusInternalServerError)
-		return
-	}
-
 	var payloadData PagosAtrasadosRequest
 	err := json.NewDecoder(r.Body).Decode(&payloadData)
 	if err != nil {
@@ -75,7 +68,7 @@ func PagosAtrasados(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+payloadData.Token)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -96,4 +89,77 @@ func PagosAtrasados(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(resp.StatusCode)
 	w.Header().Set("Content-type", "application/json")
 	json.NewEncoder(w).Encode(string(respBody))
+}
+
+func CreatePagosAtrasados(w http.ResponseWriter, r *http.Request) {
+	// Parse form
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Invalid form", http.StatusBadRequest)
+		return
+	}
+
+	payloadData := models.TemplateRequest{
+		PhoneID: r.FormValue("phone_id"),
+		WbaID:   r.FormValue("wba_id"),
+		Token:   r.FormValue("token"),
+		AppID:   r.FormValue("app_id"),
+	}
+
+	validate := validator.New()
+	err = validate.Struct(payloadData)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Validation error: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+
+	// Create message template
+	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
+	templatePayload := `{
+		"name": "pagos_atrasados_test",
+		"language": "es",
+		"category": "utility",
+		"components": [
+			{
+				"type": "header",
+				"format": "text",
+				"text": "Pago atrasado"
+			},
+			{
+				"type": "body",
+				"text": "El pago de tu venta {{1}} por {{2}} venció hace {{3}} días.\n\nPaga ahora para {{4}}. Ponte en contacto con nosotros si necesitas ayuda.",
+				"example": {
+					"body_text": [["folio", "$12,34", "3", "Evitar cargos por retraso"]]
+				}
+			}
+		]
+	}`
+
+	templateReq, err := http.NewRequest("POST", templateURL, strings.NewReader(templatePayload))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Template request creation error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	templateReq.Header.Set("Authorization", "Bearer "+payloadData.Token)
+	templateReq.Header.Set("Content-Type", "application/json")
+
+	templateResp, err := client.Do(templateReq)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Template request error: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer templateResp.Body.Close()
+
+	templateBody, err := io.ReadAll(templateResp.Body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Reading template response error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(templateResp.StatusCode)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(templateBody)
 }
