@@ -17,7 +17,9 @@ func InitRouter() {
 	http.HandleFunc("POST /api/v1/template/create/envio_compra", handlers.CreateEnvioCompra)
 	http.HandleFunc("POST /api/v1/template/create/cierre_diario", handlers.CreateCierreDiario)
 
-	// @TODO: Add new body's parameters (phone_number_id, wba_id, token)
+	// Create All Templates
+	http.HandleFunc("POST /api/v1/templates/create", handlers.CreateAll)
+
 	// Templates
 	http.HandleFunc("POST /api/v1/template/pagos_atrasados", handlers.PagosAtrasados)
 	http.HandleFunc("POST /api/v1/template/encuesta_nps", handlers.EncuestaNps)

@@ -100,10 +100,10 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
-	// Parse form
-	err := r.ParseForm()
+	// Parse multipart form
+	err := r.ParseMultipartForm(100 << 20) // 100 MB
 	if err != nil {
-		http.Error(w, "Invalid form", http.StatusBadRequest)
+		http.Error(w, "Invalid multipart form", http.StatusBadRequest)
 		return
 	}
 
@@ -126,7 +126,7 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 	// Create message template
 	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
 	templatePayload := `{
-		"name": "encuesta_nps_test",
+		"name": "encuesta_nps_v1",
 		"language": "es",
 		"category": "utility",
 		"components": [
@@ -143,11 +143,15 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 				}
 			},
 			{
-				"type": "button",
-				"sub_type": "url",
-				"text": "Completar encuesta",
-				"url": "https://sistema.smuebleria.com/{{1}}",
-				"example": ["Encuestas/Resolver/Encuestas.aspx?Id=16_249628"]
+				"type": "BUTTONS",
+				"buttons": [
+					{
+						"type": "url",
+						"text": "Completar encuesta",
+						"url": "https://sistema.smuebleria.com/{{1}}",
+						"example": ["Encuestas/Resolver/Encuestas.aspx?Id=16_249628"]
+					}
+				]
 			}
 		]
 	}`

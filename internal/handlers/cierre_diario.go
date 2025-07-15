@@ -118,7 +118,7 @@ func CierreDiario(w http.ResponseWriter, r *http.Request) {
 	"type": "template",
 	"template": {
 		"name": "cierre_diario",
-		"language": { "code": "es_MX" },
+		"language": { "code": "en" },
 		"components": [
 			{
 				"type": "header",
@@ -318,8 +318,8 @@ func CreateCierreDiario(w http.ResponseWriter, r *http.Request) {
 	// Create message template
 	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
 	templatePayload := fmt.Sprintf(`{
-		"name": "cierre_diario_test",
-		"language": "es_MX",
+		"name": "cierre_diario_v1",
+		"language": "es",
 		"category": "utility",
 		"components": [
 			{

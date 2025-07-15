@@ -118,7 +118,7 @@ func CreatePagosAtrasados(w http.ResponseWriter, r *http.Request) {
 	// Create message template
 	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
 	templatePayload := `{
-		"name": "pagos_atrasados_test",
+		"name": "pagos_atrasados_v1",
 		"language": "es",
 		"category": "utility",
 		"components": [

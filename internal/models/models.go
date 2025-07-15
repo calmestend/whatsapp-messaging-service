@@ -2,9 +2,11 @@ package models
 
 // Struct with parameters for basic message sending
 type MessageRequest struct {
-	To    string `json:"to" validate:"required,number"`
-	From  string `json:"from" validate:"required,number"`
-	Token string `json:"token" validate:"required"`
+	To      string `json:"to" validate:"required,number"`
+	From    string `json:"from" validate:"required,number"`
+	Token   string `json:"token" validate:"required"`
+	PhoneID string `json:"phone_id" validate:"required,number"`
+	WbaID   string `json:"wba_id" validate:"required,number"`
 }
 
 // Struct with parameters for template creation
