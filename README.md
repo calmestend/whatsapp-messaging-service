@@ -21,6 +21,7 @@
     "condition": "Evitar cargos por retraso",
     "from": "xxx",
     "to": "xxx"
+    "token": "xxx"
     }'
     ```
 
@@ -35,6 +36,7 @@
     "url": "Encuestas/xxx/xxx.aspx?Id=xxxx"
     "from": "xxx",
     "to": "xxx"
+    "token": "xxx"
     }'
     ```
 
@@ -49,6 +51,7 @@
     -F "amount=5000" \
     -F "numberOfProducts=4" \
     -F "sellerName=Juan Perez" \
+    -F "token=xxx" \
     -F "file=@hello.pdf"
     ```
 
@@ -63,6 +66,7 @@
     -F "folio=2M2287" \
     -F "amount=5000" \
     -F "date=28/05/2025" \
+    -F "token=xxx" \
     -F "file=@hello.pdf"
     ```
 
@@ -73,6 +77,7 @@
     -F "from=xxx" \
     -F "supplierName=Muebles X" \
     -F "businessName=Muebleria Y" \
+    -F "token=xxx" \
     -F "file=@hello.pdf"
     ```
 
@@ -85,6 +90,7 @@
       -F "businessName=muebleria x" \
       -F "date=09/06/2005" \
       -F "hour=7:23am" \
+      -F "token=xxx" \
       -F "file=@hello.pdf"
     ```
 
