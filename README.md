@@ -1,5 +1,13 @@
 # Whatsapp Messaging Service
 
+## Templates Names
+* pagos_atrasados
+* encuesta_nps
+* pedido_confirmado
+* envio_cotizacion
+* envio_compra
+* cierre_diario
+
 ## Endpoints
 
 * POST /api/v1/template/pagos_atrasados
@@ -78,4 +86,26 @@
       -F "date=09/06/2005" \
       -F "hour=7:23am" \
       -F "file=@hello.pdf"
+    ```
+
+
+
+* POST /api/v1/template/create/<template_name>
+    ```bash 
+    curl -X POST http://localhost:8080/api/v1/template/create/<template_name> \
+        -F "phone_id=xxx" \
+        -F "wba_id=xxx" \
+        -F "app_id=xxx" \
+        -F "token=xxx" \
+        -F "file=@file.pdf"
+    ```
+
+* POST /api/v1/templates/create
+    ```bash 
+    curl -X POST http://localhost:8080/api/v1/templates/create \
+        -F "phone_id=xxx" \
+        -F "wba_id=xxx" \
+        -F "app_id=xxx" \
+        -F "token=xxx" \
+        -F "file=@file.pdf"
     ```
