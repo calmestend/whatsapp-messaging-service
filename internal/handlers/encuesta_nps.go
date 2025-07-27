@@ -45,8 +45,8 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 	"to": "%s",
 	"type": "template",
 	"template": {
-		"name": "encuesta_nps",
-		"language": { "code": "es" },
+		"name": "encuesta_nps_v1",
+		"language": { "code": "es_MX" },
 		"components": [
 				{
 					"type": "button",
@@ -127,8 +127,8 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
 	templatePayload := `{
 		"name": "encuesta_nps_v1",
-		"language": "es",
-		"category": "utility",
+		"language": "es_MX",
+		"category": "marketing",
 		"components": [
 			{
 				"type": "header",

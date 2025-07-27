@@ -46,8 +46,8 @@ func PagosAtrasados(w http.ResponseWriter, r *http.Request) {
 	"to": "%s",
 	"type": "template",
 	"template": {
-		"name": "pagos_atrasados",
-		"language": { "code": "es" },
+		"name": "pagos_atrasados_v1",
+		"language": { "code": "es_MX" },
 		"components": [
 			{
 				"type": "body",
@@ -93,7 +93,7 @@ func PagosAtrasados(w http.ResponseWriter, r *http.Request) {
 
 func CreatePagosAtrasados(w http.ResponseWriter, r *http.Request) {
 	// Parse form
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(32 << 20) // 32 MB max memory
 	if err != nil {
 		http.Error(w, "Invalid form", http.StatusBadRequest)
 		return
@@ -119,7 +119,7 @@ func CreatePagosAtrasados(w http.ResponseWriter, r *http.Request) {
 	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
 	templatePayload := `{
 		"name": "pagos_atrasados_v1",
-		"language": "es",
+		"language": "es_MX",
 		"category": "utility",
 		"components": [
 			{

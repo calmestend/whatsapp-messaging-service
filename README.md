@@ -112,6 +112,5 @@
         -F "phone_id=xxx" \
         -F "wba_id=xxx" \
         -F "app_id=xxx" \
-        -F "token=xxx" \
-        -F "file=@file.pdf"
+        -F "token=xxx" 
     ```

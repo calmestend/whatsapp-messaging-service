@@ -120,7 +120,7 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	"to": "%s",
 	"type": "template",
 	"template": {
-		"name": "envio_cotizacion",
+		"name": "envio_cotizacion_v1",
 		"language": { "code": "es_MX" },
 		"components": [
 			{
@@ -318,7 +318,7 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
 	templatePayload := fmt.Sprintf(`{
 		"name": "envio_cotizacion_v1",
-		"language": "es",
+		"language": "es_MX",
 		"category": "utility",
 		"components": [
 			{

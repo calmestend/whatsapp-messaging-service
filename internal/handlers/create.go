@@ -1,14 +1,41 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
+	"mime/multipart"
+	"net/textproto"
+	"os"
+	"path/filepath"
+
 	"github.com/calmestend/whatsapp-messaging-service/internal/models"
 	"github.com/go-playground/validator/v10"
 	"net/http"
 )
 
+// ResponseRecorder is a custom ResponseWriter to capture responses
+type ResponseRecorder struct {
+	StatusCode int
+	Headers    http.Header
+	Body       []byte
+}
+
+func (r *ResponseRecorder) Header() http.Header {
+	return r.Headers
+}
+
+func (r *ResponseRecorder) Write(data []byte) (int, error) {
+	r.Body = append(r.Body, data...)
+	return len(data), nil
+}
+
+func (r *ResponseRecorder) WriteHeader(statusCode int) {
+	r.StatusCode = statusCode
+}
+
 func CreateAll(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(100 << 20) // 100 MB
+	// Parse multipart form instead of regular form
+	err := r.ParseMultipartForm(32 << 20) // 32 MB max memory
 	if err != nil {
 		http.Error(w, "Invalid multipart form", http.StatusBadRequest)
 		return
@@ -28,12 +55,53 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, _, err := r.FormFile("file")
+	// Rest of your code remains the same...
+	// Read local file
+	filePath := "template.pdf"
+	fileData, err := os.ReadFile(filePath)
 	if err != nil {
-		http.Error(w, "Missing or invalid file", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Error reading local file %s: %v", filePath, err), http.StatusInternalServerError)
 		return
 	}
-	defer file.Close()
+
+	// Create a multipart form with the local file for the requests
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	// Add form fields
+	writer.WriteField("phone_id", payloadData.PhoneID)
+	writer.WriteField("wba_id", payloadData.WbaID)
+	writer.WriteField("token", payloadData.Token)
+	writer.WriteField("app_id", payloadData.AppID)
+
+	// Add file part
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, filepath.Base(filePath)))
+	h.Set("Content-Type", "application/pdf")
+	part, err := writer.CreatePart(h)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating file part: %v", err), http.StatusInternalServerError)
+		return
+	}
+	part.Write(fileData)
+	writer.Close()
+
+	// Create a new request with the multipart data
+	newReq, err := http.NewRequest("POST", r.URL.String(), bytes.NewReader(requestBody.Bytes()))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating new request: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Copy headers from original request
+	for key, values := range r.Header {
+		for _, value := range values {
+			newReq.Header.Add(key, value)
+		}
+	}
+
+	// Set the multipart content type
+	newReq.Header.Set("Content-Type", writer.FormDataContentType())
 
 	// List of template creation functions to call
 	createFunctions := []struct {
@@ -59,11 +127,22 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 			Headers:    make(http.Header),
 		}
 
-		// Reset the file position for each function call
-		file.Seek(0, 0)
+		// Create a fresh request for each function call
+		freshReq, err := http.NewRequest("POST", r.URL.String(), bytes.NewReader(requestBody.Bytes()))
+		if err != nil {
+			errors[createFunc.name] = fmt.Sprintf("Error creating fresh request: %v", err)
+			continue
+		}
+
+		// Copy headers
+		for key, values := range newReq.Header {
+			for _, value := range values {
+				freshReq.Header.Add(key, value)
+			}
+		}
 
 		// Call the create function
-		createFunc.fn(recorder, r)
+		createFunc.fn(recorder, freshReq)
 
 		// Store the result
 		if recorder.StatusCode >= 200 && recorder.StatusCode < 300 {
@@ -100,24 +179,4 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 	}`, len(results), len(errors), response)
 
 	w.Write([]byte(responseBody))
-}
-
-// ResponseRecorder is a custom ResponseWriter to capture responses
-type ResponseRecorder struct {
-	StatusCode int
-	Headers    http.Header
-	Body       []byte
-}
-
-func (r *ResponseRecorder) Header() http.Header {
-	return r.Headers
-}
-
-func (r *ResponseRecorder) Write(data []byte) (int, error) {
-	r.Body = append(r.Body, data...)
-	return len(data), nil
-}
-
-func (r *ResponseRecorder) WriteHeader(statusCode int) {
-	r.StatusCode = statusCode
 }
