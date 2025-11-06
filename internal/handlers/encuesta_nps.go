@@ -8,7 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/calmestend/whatsapp-messaging-service/internal/logger"
 	"github.com/calmestend/whatsapp-messaging-service/internal/models"
+	"github.com/calmestend/whatsapp-messaging-service/internal/utils"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -25,7 +27,8 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 	var payloadData EncuestaNpsRequest
 	err := json.NewDecoder(r.Body).Decode(&payloadData)
 	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid JSON error: %v", err), http.StatusBadRequest)
+		logger.Warn("Invalid JSON error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -35,7 +38,8 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 	err = validate.Struct(payloadData)
 	if err != nil {
 		errors := err.(validator.ValidationErrors)
-		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Validation error: %v", errors), http.StatusBadRequest)
+		logger.Warn("Validation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -73,6 +77,7 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 	req, err := http.NewRequest("POST", url, strings.NewReader(payloadMessage))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Request creation error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Request creation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -83,6 +88,7 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.Do(req)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("HTTP request error: %v", err), http.StatusInternalServerError)
+		logger.Warn("HTTP request error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -91,11 +97,15 @@ func EncuestaNps(w http.ResponseWriter, r *http.Request) {
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Reading response error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Reading response error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
 	w.WriteHeader(resp.StatusCode)
 	w.Header().Set("Content-type", "application/json")
+
+	parsedBody := utils.ParseJSONBody(respBody)
+	logger.LogResponse(resp.StatusCode, r.RequestURI, parsedBody)
 	json.NewEncoder(w).Encode(string(respBody))
 }
 
@@ -103,7 +113,8 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 	// Parse multipart form
 	err := r.ParseMultipartForm(100 << 20) // 100 MB
 	if err != nil {
-		http.Error(w, "Invalid multipart form", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid multipart form error: %v", err), http.StatusBadRequest)
+		logger.Warn("Invalid form", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -117,7 +128,9 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 	validate := validator.New()
 	err = validate.Struct(payloadData)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Validation error: %s", err), http.StatusBadRequest)
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation error: %v", errors), http.StatusBadRequest)
+		logger.Warn("Validation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -159,6 +172,7 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 	templateReq, err := http.NewRequest("POST", templateURL, strings.NewReader(templatePayload))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Template request creation error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Template request creation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -168,6 +182,7 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 	templateResp, err := client.Do(templateReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Template request error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Template request error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	defer templateResp.Body.Close()
@@ -175,10 +190,14 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 	templateBody, err := io.ReadAll(templateResp.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Reading template response error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Reading template response error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
 	w.WriteHeader(templateResp.StatusCode)
 	w.Header().Set("Content-Type", "application/json")
+
+	parsedBody := utils.ParseJSONBody(templateBody)
+	logger.LogResponse(templateResp.StatusCode, r.RequestURI, parsedBody)
 	w.Write(templateBody)
 }

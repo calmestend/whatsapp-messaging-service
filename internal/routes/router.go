@@ -7,6 +7,11 @@ import (
 	"github.com/calmestend/whatsapp-messaging-service/internal/handlers"
 )
 
+// TODO: Add better logs
+// FIXME: positive falses
+// FIXME: better logs messages
+// FIXME: better comments
+
 // Init router
 func InitRouter() {
 	// Create Templates

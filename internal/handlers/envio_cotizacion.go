@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"strings"
 	"time"
 
+	"github.com/calmestend/whatsapp-messaging-service/internal/logger"
 	"github.com/calmestend/whatsapp-messaging-service/internal/models"
+	"github.com/calmestend/whatsapp-messaging-service/internal/utils"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -31,7 +32,8 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	// Parse multipart form
 	err := r.ParseMultipartForm(100 << 20) // 100 MB
 	if err != nil {
-		http.Error(w, "Invalid multipart form", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid multipart form error: %v", err), http.StatusBadRequest)
+		logger.Warn("Invalid multipart form error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	defer r.Body.Close()
@@ -51,14 +53,17 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	validate := validator.New()
 	err = validate.Struct(payloadData)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Validation error: %s", err), http.StatusBadRequest)
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation error: %v", errors), http.StatusBadRequest)
+		logger.Warn("Validation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
 	// Read file into buffer
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "Missing or invalid file", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Missing or invalid file error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Missing or invalid file error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	defer file.Close()
@@ -66,7 +71,8 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	var fileBuffer bytes.Buffer
 	_, err = io.Copy(&fileBuffer, file)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading file: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Reading file error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Reading file error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -82,7 +88,8 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Type", "application/pdf")
 	part, err := writer.CreatePart(h)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("CreatePart error: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Create part with PDF MIME error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Create part with PDF MIME error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	io.Copy(part, &fileBuffer)
@@ -95,21 +102,21 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 
 	uploadResp, err := client.Do(uploadReq)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Upload failed: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Upload error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Upload error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	defer uploadResp.Body.Close()
 
 	// Read upload response
 	uploadBody, _ := io.ReadAll(uploadResp.Body)
-	log.Printf("Upload response status: %s", uploadResp.Status)
-	log.Printf("Upload response body: %s", string(uploadBody))
 
 	var uploadResult struct {
 		ID string `json:"id"`
 	}
 	if err := json.Unmarshal(uploadBody, &uploadResult); err != nil {
-		http.Error(w, fmt.Sprintf("Parsing media ID failed: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Parsing media ID error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Parsing media ID error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -152,6 +159,7 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	msgReq, err := http.NewRequest("POST", msgURL, strings.NewReader(payloadMessage))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Request creation error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Request creation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	msgReq.Header.Set("Authorization", "Bearer "+payloadData.Token)
@@ -161,6 +169,7 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	msgResp, err := client.Do(msgReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("HTTP request error: %v", err), http.StatusInternalServerError)
+		logger.Warn("HTTP request error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	defer msgResp.Body.Close()
@@ -168,10 +177,14 @@ func EnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(msgResp.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Reading response error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Reading response error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	w.WriteHeader(msgResp.StatusCode)
 	w.Header().Set("Content-Type", "application/json")
+
+	parsedBody := utils.ParseJSONBody(body)
+	logger.LogResponse(msgResp.StatusCode, r.RequestURI, parsedBody)
 	json.NewEncoder(w).Encode(string(body))
 }
 
@@ -179,7 +192,8 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	// Parse multipart form
 	err := r.ParseMultipartForm(100 << 20) // 100 MB
 	if err != nil {
-		http.Error(w, "Invalid multipart form", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid multipart form error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Invalid multipart form error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -193,13 +207,16 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	validate := validator.New()
 	err = validate.Struct(payloadData)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Validation error: %s", err), http.StatusBadRequest)
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation error: %v", errors), http.StatusBadRequest)
+		logger.Warn("Validation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "Missing or invalid file", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Missing or invalid file error: %v", err), http.StatusBadRequest)
+		logger.Warn("Missing or invalid file error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -209,7 +226,8 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 
 	_, err = io.Copy(&fileBuffer, file)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading file: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Reading file error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Reading file error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -227,6 +245,7 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	uploadSessionReq, err := http.NewRequest("POST", uploadSessionURL, strings.NewReader(uploadSessionPayload))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upload session request creation error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Upload session request creation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -236,6 +255,7 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	uploadSessionResp, err := client.Do(uploadSessionReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upload session request error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Upload session request error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	defer uploadSessionResp.Body.Close()
@@ -243,11 +263,15 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	uploadSessionBody, err := io.ReadAll(uploadSessionResp.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Reading upload session response error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Reading upload session response error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
+	uploadSessionBodyParsed := utils.ParseJSONBody(uploadSessionBody)
+
 	if uploadSessionResp.StatusCode != http.StatusOK {
 		http.Error(w, fmt.Sprintf("Upload session failed with status: %s, body: %s", uploadSessionResp.Status, string(uploadSessionBody)), uploadSessionResp.StatusCode)
+		logger.LogResponse(uploadSessionResp.StatusCode, r.RequestURI, uploadSessionBodyParsed)
 		return
 	}
 
@@ -257,7 +281,8 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(uploadSessionBody, &uploadSessionResult)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Parsing upload session ID failed: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Parsing upload session ID error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Parsing upload session ID error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -273,7 +298,8 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Type", "application/pdf")
 	part, err := writer.CreatePart(h)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("CreatePart error: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Create file part error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Create file part error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	io.Copy(part, &fileBuffer)
@@ -282,6 +308,7 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	uploadFileReq, err := http.NewRequest("POST", uploadFileURL, &uploadBuffer)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upload file request creation error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Upload file request creation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -291,6 +318,7 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	uploadFileResp, err := client.Do(uploadFileReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upload file request error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Upload file request error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	defer uploadFileResp.Body.Close()
@@ -298,11 +326,15 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	uploadFileBody, err := io.ReadAll(uploadFileResp.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Reading upload file response error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Reading upload file response error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
+	uploadFileBodyParsed := utils.ParseJSONBody(uploadFileBody)
+
 	if uploadFileResp.StatusCode != http.StatusOK {
 		http.Error(w, fmt.Sprintf("File upload failed with status: %s, body: %s", uploadFileResp.Status, string(uploadFileBody)), uploadFileResp.StatusCode)
+		logger.LogResponse(uploadSessionResp.StatusCode, r.RequestURI, uploadFileBodyParsed)
 		return
 	}
 
@@ -310,7 +342,8 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 		H string `json:"h"`
 	}
 	if err := json.Unmarshal(uploadFileBody, &uploadFileResult); err != nil {
-		http.Error(w, fmt.Sprintf("Parsing upload file handle failed: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Parsing upload file handle error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Parsing upload file handle error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -343,6 +376,7 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	templateReq, err := http.NewRequest("POST", templateURL, strings.NewReader(templatePayload))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Template request creation error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Template request creation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -352,6 +386,7 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	templateResp, err := client.Do(templateReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Template request error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Template request error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	defer templateResp.Body.Close()
@@ -359,10 +394,14 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 	templateBody, err := io.ReadAll(templateResp.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Reading template response error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Reading template response error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
 	w.WriteHeader(templateResp.StatusCode)
 	w.Header().Set("Content-Type", "application/json")
+
+	parsedBody := utils.ParseJSONBody(templateBody)
+	logger.LogResponse(templateResp.StatusCode, r.RequestURI, parsedBody)
 	w.Write(templateBody)
 }

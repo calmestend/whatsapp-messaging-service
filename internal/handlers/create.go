@@ -8,9 +8,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/calmestend/whatsapp-messaging-service/internal/models"
-	"github.com/go-playground/validator/v10"
 	"net/http"
+
+	"github.com/calmestend/whatsapp-messaging-service/internal/logger"
+	"github.com/calmestend/whatsapp-messaging-service/internal/models"
+	"github.com/calmestend/whatsapp-messaging-service/internal/utils"
+	"github.com/go-playground/validator/v10"
 )
 
 // ResponseRecorder is a custom ResponseWriter to capture responses
@@ -51,7 +54,9 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 	validate := validator.New()
 	err = validate.Struct(payloadData)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Validation error: %s", err), http.StatusBadRequest)
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation error: %v", errors), http.StatusBadRequest)
+		logger.Warn("Validation error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -60,7 +65,8 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 	filePath := "template.pdf"
 	fileData, err := os.ReadFile(filePath)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading local file %s: %v", filePath, err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Reading local file %s error: %v", filePath, err), http.StatusInternalServerError)
+		logger.Warn("Reading local file error", "file", filePath, "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -80,7 +86,8 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Type", "application/pdf")
 	part, err := writer.CreatePart(h)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating file part: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Creating file part error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Creating file part error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 	part.Write(fileData)
@@ -89,7 +96,8 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 	// Create a new request with the multipart data
 	newReq, err := http.NewRequest("POST", r.URL.String(), bytes.NewReader(requestBody.Bytes()))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating new request: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Creating new request error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Creating new request error", "error", err, "uri", r.RequestURI, "method", r.Method)
 		return
 	}
 
@@ -170,13 +178,29 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
+	var message string
+	var statusCode int
+
+	switch {
+	case len(results) > 0 && len(errors) > 0:
+		message = "Some templates failed to create"
+		statusCode = http.StatusPartialContent // 206
+	case len(errors) > 0 && len(results) == 0:
+		message = "All templates failed to create"
+		statusCode = http.StatusInternalServerError // 500
+	default:
+		message = "All templates created successfully"
+		statusCode = http.StatusOK // 200
+	}
 	// Send a summary response
 	responseBody := fmt.Sprintf(`{
-		"message": "Template creation completed",
+		"message": "%s",
 		"successful": %d,
 		"failed": %d,
 		"results": %v
-	}`, len(results), len(errors), response)
+	}`, message, len(results), len(errors), response)
 
+	parsedBody := utils.ParseJSONBody([]byte(responseBody))
+	logger.LogResponse(statusCode, r.RequestURI, parsedBody)
 	w.Write([]byte(responseBody))
 }
