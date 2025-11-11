@@ -133,7 +133,7 @@ func PedidoConfirmado(w http.ResponseWriter, r *http.Request) {
 	"type": "template",
 	"template": {
 		"name": "pedido_confirmado_v1",
-		"language": { "code": "es_MX" },
+		"language": { "code": "es" },
 		"components": [
 			{
 				"type": "header",
@@ -357,7 +357,7 @@ func CreatePedidoConfirmado(w http.ResponseWriter, r *http.Request) {
 	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
 	templatePayload := fmt.Sprintf(`{
 		"name": "pedido_confirmado_v1",
-		"language": "es_MX",
+		"language": "es",
 		"category": "utility",
 		"components": [
 			{

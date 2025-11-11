@@ -52,7 +52,7 @@ func PagosAtrasados(w http.ResponseWriter, r *http.Request) {
 	"type": "template",
 	"template": {
 		"name": "pagos_atrasados_v1",
-		"language": { "code": "es_MX" },
+		"language": { "code": "es" },
 		"components": [
 			{
 				"type": "body",
@@ -133,7 +133,7 @@ func CreatePagosAtrasados(w http.ResponseWriter, r *http.Request) {
 	templateURL := fmt.Sprintf("https://graph.facebook.com/v23.0/%s/message_templates", payloadData.WbaID)
 	templatePayload := `{
 		"name": "pagos_atrasados_v1",
-		"language": "es_MX",
+		"language": "es",
 		"category": "utility",
 		"components": [
 			{
