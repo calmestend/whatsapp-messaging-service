@@ -365,7 +365,7 @@ func CreateEnvioCotizacion(w http.ResponseWriter, r *http.Request) {
 			},
 			{
 				"type": "body",
-				"text": "Hola {{5}} , te compartimos los datos de tu cotización en *{{1}}*\n\nFolio: *{{2}}*\nMonto:*{{3}}*\nValido hasta: *{{4}}*\n\nSi deseas hacer el pago de la cotización puedes responder a este mensaje.",
+				"text": "Hola {{5}}, te compartimos los datos de tu cotización en *{{1}}*\n\nFolio: *{{2}}*\nMonto:*{{3}}*\nValido hasta: *{{4}}*\n\nSi deseas hacer el pago de la cotización puedes responder a este mensaje.",
 				"example": {
 					"body_text": [["Sistemas Cubicos", "2M2287", "$4,935.00", "15/06/2025", "Alex Velasco"]]
 				}

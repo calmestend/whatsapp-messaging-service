@@ -141,7 +141,7 @@ func CreateEncuestaNps(w http.ResponseWriter, r *http.Request) {
 	templatePayload := `{
 		"name": "encuesta_nps_v1",
 		"language": "es",
-		"category": "marketing",
+		"category": "utility",
 		"components": [
 			{
 				"type": "header",

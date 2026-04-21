@@ -364,7 +364,7 @@ func CreateCierreDiario(w http.ResponseWriter, r *http.Request) {
 			},
 			{
 				"type": "body",
-				"text": "Hola {{4}},\nTe compartimos el *cierre diario* de la empresa *{{1}}* que se genero el dia *{{2}} *a la hora *{{3}}*\nSi deseas tener mas detalles consulta el reporte de bancos o cuentas en SMuebleria.",
+				"text": "Hola {{4}},\nTe compartimos el *cierre diario* de la empresa *{{1}}* que se genero el dia *{{2}}* a la hora *{{3}}*\nSi deseas tener mas detalles consulta el reporte de bancos o cuentas.",
 				"example": {
 					"body_text": [["Muebleria X", "06/06/2025", "10:35 pm", "Alejandro Velasco"]]
 				}
