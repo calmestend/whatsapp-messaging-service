@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"net/textproto"
@@ -122,6 +123,9 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 		{"envio_cotizacion", CreateEnvioCotizacion},
 		{"envio_compra", CreateEnvioCompra},
 		{"cierre_diario", CreateCierreDiario},
+		{"pago_por_vencer", CreatePagoPorVencer},
+		{"saldo_vencido", CreateSaldoVencido},
+		{"envio_factura", CreateEnvioFactura},
 	}
 
 	results := make(map[string]any)
@@ -164,20 +168,6 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Prepare the response
-	response := map[string]any{
-		"results": results,
-	}
-
-	if len(errors) > 0 {
-		response["errors"] = errors
-		w.WriteHeader(http.StatusPartialContent) // 206 for partial success
-	} else {
-		w.WriteHeader(http.StatusOK)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-
 	var message string
 	var statusCode int
 
@@ -192,15 +182,31 @@ func CreateAll(w http.ResponseWriter, r *http.Request) {
 		message = "All templates created successfully"
 		statusCode = http.StatusOK // 200
 	}
-	// Send a summary response
-	responseBody := fmt.Sprintf(`{
-		"message": "%s",
-		"successful": %d,
-		"failed": %d,
-		"results": %v
-	}`, message, len(results), len(errors), response)
 
-	parsedBody := utils.ParseJSONBody([]byte(responseBody))
+	// Build the summary response as a real map and marshal it,
+	// instead of hand-building a JSON string with %v (which produced
+	// invalid JSON for the nested "results"/"errors" maps).
+	response := map[string]any{
+		"message":    message,
+		"successful": len(results),
+		"failed":     len(errors),
+		"results":    results,
+	}
+	if len(errors) > 0 {
+		response["errors"] = errors
+	}
+
+	responseBody, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Marshaling response error: %v", err), http.StatusInternalServerError)
+		logger.Warn("Marshaling response error", "error", err, "uri", r.RequestURI, "method", r.Method)
+		return
+	}
+
+	parsedBody := utils.ParseJSONBody(responseBody)
 	logger.LogResponse(statusCode, r.RequestURI, parsedBody)
-	w.Write([]byte(responseBody))
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	w.Write(responseBody)
 }

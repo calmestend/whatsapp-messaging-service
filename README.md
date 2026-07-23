@@ -7,6 +7,9 @@
 * envio_cotizacion
 * envio_compra
 * cierre_diario
+* pago_por_vencer
+* saldo_vencido
+* envio_factura
 
 ## Endpoints
 
@@ -20,12 +23,10 @@
     "days": "3",
     "condition": "Evitar cargos por retraso",
     "from": "xxx",
-    "to": "xxx"
+    "to": "xxx",
     "token": "xxx"
     }'
     ```
-
-
 * POST /api/v1/template/encuesta_nps
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/encuesta_nps \
@@ -33,13 +34,12 @@
     -d '{
     "businessName": "Muebleria Juanito",
     "date": "1 de enero de 2024",
-    "url": "Encuestas/xxx/xxx.aspx?Id=xxxx"
+    "url": "Encuestas/xxx/xxx.aspx?Id=xxxx",
     "from": "xxx",
-    "to": "xxx"
+    "to": "xxx",
     "token": "xxx"
     }'
     ```
-
 * POST /api/v1/template/pedido_confirmado
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/pedido_confirmado \
@@ -54,8 +54,6 @@
     -F "token=xxx" \
     -F "file=@hello.pdf"
     ```
-
-
 * POST /api/v1/template/envio_cotizacion
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/envio_cotizacion \
@@ -69,7 +67,6 @@
     -F "token=xxx" \
     -F "file=@hello.pdf"
     ```
-
 * POST /api/v1/template/envio_compra
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/envio_compra \
@@ -80,7 +77,6 @@
     -F "token=xxx" \
     -F "file=@hello.pdf"
     ```
-
 * POST /api/v1/template/cierre_diario
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/cierre_diario \
@@ -93,9 +89,42 @@
       -F "token=xxx" \
       -F "file=@hello.pdf"
     ```
-
-
-
+* POST /api/v1/template/pago_por_vencer
+    ```bash 
+    curl -X POST http://localhost:8080/api/v1/template/pago_por_vencer \
+    -H "Content-Type: application/json" \
+    -d '{
+    "sale": "folio",
+    "amount": "12.34",
+    "days": "3",
+    "from": "xxx",
+    "to": "xxx",
+    "token": "xxx"
+    }'
+    ```
+* POST /api/v1/template/saldo_vencido
+    ```bash 
+    curl -X POST http://localhost:8080/api/v1/template/saldo_vencido \
+    -H "Content-Type: application/json" \
+    -d '{
+    "account": "2M2287",
+    "amount": "10000",
+    "days": "15",
+    "from": "xxx",
+    "to": "xxx",
+    "token": "xxx"
+    }'
+    ```
+* POST /api/v1/template/envio_factura
+    ```bash 
+    curl -X POST http://localhost:8080/api/v1/template/envio_factura \
+    -F "to=xxx" \
+    -F "from=xxx" \
+    -F "customerName=Alex Velasco" \
+    -F "businessName=Sistemas Cubicos" \
+    -F "token=xxx" \
+    -F "file=@hello.pdf"
+    ```
 * POST /api/v1/template/create/<template_name>
     ```bash 
     curl -X POST http://localhost:8080/api/v1/template/create/<template_name> \
@@ -105,7 +134,6 @@
         -F "token=xxx" \
         -F "file=@file.pdf"
     ```
-
 * POST /api/v1/templates/create
     ```bash 
     curl -X POST http://localhost:8080/api/v1/templates/create \
